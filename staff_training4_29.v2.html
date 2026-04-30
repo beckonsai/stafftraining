@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Policy Training — Beckons</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+  :root{--beckons-red:#5F0002;--beckons-red-dark:#3d0001;--beckons-black:#1a1916;--beckons-cream:#f5f1ea;--beckons-warm:#e8e0d0;--beckons-gold:#b8955a;--beckons-gold-light:#d4b07a;--beckons-muted:#7a756b;--beckons-forest:#2d3b2a;--beckons-terracotta:#a05840;--section-max:820px}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--beckons-cream);color:var(--beckons-black);line-height:1.7;font-size:15px}
+  .hero{background:var(--beckons-red);color:var(--beckons-cream);padding:64px 40px 56px;text-align:center;position:relative;overflow:hidden}
+  .hero::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:radial-gradient(ellipse at 20% 0%,rgba(255,255,255,0.06) 0%,transparent 55%),radial-gradient(ellipse at 85% 100%,rgba(0,0,0,0.25) 0%,transparent 60%);pointer-events:none}
+  .hero-eyebrow{font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:rgba(245,241,234,0.65);margin-bottom:20px}
+  .hero h1{font-family:'Cormorant Garamond',serif;font-size:58px;font-weight:300;line-height:1.1;margin-bottom:16px;position:relative;color:rgba(245,241,234,0.8)}
+  .hero h1 em{font-style:italic;color:rgba(245,241,234,0.8)}
+  .hero-sub{font-size:15px;color:rgba(245,241,234,0.65);max-width:520px;margin:0 auto 32px;font-weight:300}
+  .hero-meta{display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);border-radius:100px;padding:8px 20px;font-size:13px;color:rgba(245,241,234,0.85);letter-spacing:0.05em}
+
+  .progress-bar-wrap{background:white;border-bottom:1px solid rgba(26,25,22,0.1);padding:14px 24px}
+  .progress-bar-inner{max-width:var(--section-max);margin:0 auto}
+  .progress-track{height:3px;background:rgba(26,25,22,0.08);border-radius:2px;overflow:hidden}
+  .progress-fill{height:100%;background:var(--beckons-red);width:0%;transition:width 0.4s ease;border-radius:2px}
+  .progress-meta{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;letter-spacing:0.1em;text-transform:uppercase}
+  .progress-meta .step-label{color:var(--beckons-muted);font-weight:500}
+  .progress-meta .step-count{color:var(--beckons-gold);font-weight:500}
+
+  .section{display:none;max-width:var(--section-max);margin:0 auto;padding:48px 40px 64px}
+  .section.active{display:block}
+  .section-label{font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:var(--beckons-gold);margin-bottom:12px}
+  .section h2{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:400;line-height:1.2;margin-bottom:12px}
+  .section-intro{font-size:15px;color:var(--beckons-muted);max-width:600px;margin-bottom:40px;font-weight:300;line-height:1.8}
+
+  .h3-section{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;margin-bottom:16px;margin-top:32px}
+
+  .tip-list{list-style:none;display:flex;flex-direction:column;gap:12px;margin-bottom:32px}
+  .tip-list li{background:white;border:1px solid rgba(26,25,22,0.08);border-left:3px solid var(--beckons-gold);border-radius:0 8px 8px 0;padding:16px 20px;font-size:14px;line-height:1.6}
+  .tip-list li strong{display:block;font-weight:500;margin-bottom:4px;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;color:var(--beckons-gold)}
+  .tip-list li.highlight{border-left-color:var(--beckons-forest);background:rgba(45,59,42,0.04)}
+  .tip-list li.highlight strong{color:var(--beckons-forest)}
+  .tip-list li.warn{border-left-color:var(--beckons-terracotta);background:rgba(160,88,64,0.04)}
+  .tip-list li.warn strong{color:var(--beckons-terracotta)}
+
+  .callout{background:rgba(184,149,90,0.08);border:1px solid rgba(184,149,90,0.25);border-radius:10px;padding:20px 24px;font-size:14px;line-height:1.7;margin-bottom:24px}
+  .callout strong{color:var(--beckons-gold);font-weight:500}
+
+  .do-dont{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px}
+  @media(max-width:580px){.do-dont{grid-template-columns:1fr}}
+  .do-box,.dont-box{border-radius:10px;padding:20px}
+  .do-box{background:rgba(45,59,42,0.06);border:1px solid rgba(45,59,42,0.15)}
+  .dont-box{background:rgba(160,88,64,0.06);border:1px solid rgba(160,88,64,0.15)}
+  .do-box .label{font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--beckons-forest);margin-bottom:10px}
+  .dont-box .label{font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--beckons-terracotta);margin-bottom:10px}
+  .do-box ul,.dont-box ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+  .do-box li,.dont-box li{font-size:13px;line-height:1.5;padding-left:16px;position:relative}
+  .do-box li::before{content:'✓';position:absolute;left:0;color:var(--beckons-forest);font-weight:500}
+  .dont-box li::before{content:'✗';position:absolute;left:0;color:var(--beckons-terracotta);font-weight:500}
+
+  .example-box{background:var(--beckons-black);color:var(--beckons-cream);border-radius:12px;padding:28px 32px;margin-bottom:32px}
+  .example-box .ex-label{font-size:11px;letter-spacing:0.15em;text-transform:uppercase;color:var(--beckons-gold);margin-bottom:14px;font-weight:500}
+  .example-prompt{font-family:'Cormorant Garamond',serif;font-size:18px;font-style:italic;font-weight:300;color:rgba(245,241,234,0.9);line-height:1.6;margin-bottom:12px;border-left:2px solid var(--beckons-gold);padding-left:16px}
+  .example-note{font-size:13px;color:rgba(245,241,234,0.5);padding-left:18px}
+
+  .divider{border:none;border-top:1px solid rgba(26,25,22,0.08);margin:32px 0}
+
+  .welcome-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:32px}
+  @media(max-width:580px){.welcome-grid{grid-template-columns:1fr}}
+  .welcome-card{background:white;border:1px solid rgba(26,25,22,0.08);border-radius:10px;padding:16px}
+  .welcome-card .label{font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--beckons-gold);margin-bottom:6px}
+  .welcome-card .value{font-size:22px;font-family:'Cormorant Garamond',serif;font-weight:300}
+
+  .section-footer{display:flex;justify-content:space-between;align-items:center;margin-top:48px;padding-top:24px;border-top:1px solid rgba(26,25,22,0.08);gap:12px}
+  .nav-arrow{padding:10px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border:1px solid rgba(26,25,22,0.15);border-radius:100px;background:none;cursor:pointer;transition:all 0.2s;color:var(--beckons-black)}
+  .nav-arrow:hover:not(:disabled){background:var(--beckons-black);color:var(--beckons-cream);border-color:var(--beckons-black)}
+  .nav-arrow.primary{background:var(--beckons-red);color:white;border-color:var(--beckons-red)}
+  .nav-arrow.primary:hover:not(:disabled){background:var(--beckons-red-dark);border-color:var(--beckons-red-dark)}
+  .nav-arrow:disabled{opacity:0.4;cursor:not-allowed}
+
+  /* Quiz */
+  .quiz-question{background:white;border:1px solid rgba(26,25,22,0.08);border-radius:12px;padding:24px;margin-bottom:16px}
+  .quiz-question .q-num{font-size:11px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;color:var(--beckons-gold);margin-bottom:8px}
+  .quiz-question .q-text{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:400;line-height:1.4;margin-bottom:16px;color:var(--beckons-black)}
+  .options{display:flex;flex-direction:column;gap:8px}
+  .option{display:flex;align-items:flex-start;padding:12px 16px;background:var(--beckons-cream);border:1px solid rgba(26,25,22,0.08);border-radius:8px;cursor:pointer;transition:all 0.2s}
+  .option:hover{border-color:var(--beckons-gold);background:rgba(184,149,90,0.05)}
+  .option input{position:absolute;opacity:0;pointer-events:none}
+  .option .marker{width:16px;height:16px;border:1.5px solid rgba(26,25,22,0.25);border-radius:50%;margin-right:12px;margin-top:3px;flex-shrink:0;position:relative;transition:all 0.2s}
+  .option.selected{border-color:var(--beckons-red);background:rgba(95,0,2,0.04)}
+  .option.selected .marker{border-color:var(--beckons-red)}
+  .option.selected .marker::after{content:'';position:absolute;top:2px;left:2px;width:8px;height:8px;background:var(--beckons-red);border-radius:50%}
+  .option .label-text{font-size:14px;line-height:1.5;color:var(--beckons-black)}
+  .option.disabled{cursor:default;pointer-events:none}
+  .option.correct{border-color:var(--beckons-forest);background:rgba(45,59,42,0.06)}
+  .option.correct .marker{border-color:var(--beckons-forest);background:var(--beckons-forest)}
+  .option.correct .marker::after{content:'';position:absolute;top:3px;left:5px;width:4px;height:8px;border:solid white;border-width:0 2px 2px 0;transform:rotate(45deg);background:transparent;border-radius:0}
+  .option.incorrect{border-color:var(--beckons-terracotta);background:rgba(160,88,64,0.06)}
+  .option.incorrect .marker{border-color:var(--beckons-terracotta);background:var(--beckons-terracotta)}
+  .option.incorrect .marker::after{content:'×';position:absolute;top:-3px;left:3px;color:white;font-size:14px;font-weight:500;line-height:1;width:auto;height:auto;background:transparent;border-radius:0}
+
+  /* Results */
+  .results-hero{text-align:center;background:white;border:1px solid rgba(26,25,22,0.08);border-radius:12px;padding:40px;margin-bottom:24px}
+  .results-eyebrow{font-size:11px;font-weight:500;letter-spacing:0.2em;text-transform:uppercase;color:var(--beckons-gold);margin-bottom:14px}
+  .results-score{font-family:'Cormorant Garamond',serif;font-size:72px;font-weight:300;line-height:1;color:var(--beckons-black);margin:8px 0 14px 0}
+  .results-score .denom{color:var(--beckons-muted);font-size:48px}
+  .results-status{display:inline-block;font-size:11px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase;padding:5px 14px;border-radius:100px;margin-bottom:18px}
+  .results-status.pass{color:var(--beckons-forest);background:rgba(45,59,42,0.1);border:1px solid rgba(45,59,42,0.25)}
+  .results-status.fail{color:var(--beckons-terracotta);background:rgba(160,88,64,0.1);border:1px solid rgba(160,88,64,0.25)}
+  .results-message{font-family:'Cormorant Garamond',serif;font-size:18px;font-style:italic;font-weight:300;color:var(--beckons-muted);max-width:520px;margin:0 auto 24px;line-height:1.6}
+  .record-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border:1px solid var(--beckons-red);border-radius:100px;background:var(--beckons-red);color:white;cursor:pointer;transition:all 0.2s;text-decoration:none}
+  .record-btn:hover{background:var(--beckons-red-dark);border-color:var(--beckons-red-dark)}
+  .record-confirmation{display:none;margin-top:16px;font-size:13px;color:var(--beckons-forest);font-weight:500}
+  .record-confirmation.shown{display:block}
+
+  .review-item{background:white;border:1px solid rgba(26,25,22,0.08);border-left:3px solid var(--beckons-terracotta);border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:12px}
+  .review-item .q{font-size:14px;font-weight:500;color:var(--beckons-black);margin-bottom:10px;line-height:1.5}
+  .review-item .q .qnum{color:var(--beckons-terracotta);margin-right:6px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;font-size:12px}
+  .review-item .answer-row{display:flex;align-items:flex-start;font-size:13px;margin-bottom:4px;line-height:1.5}
+  .review-item .answer-row .answer-label{color:var(--beckons-muted);text-transform:uppercase;letter-spacing:0.05em;font-size:11px;font-weight:500;width:100px;flex-shrink:0;padding-top:1px}
+  .review-item .answer-row.wrong-row .answer-text{color:var(--beckons-terracotta);text-decoration:line-through;text-decoration-color:rgba(160,88,64,0.4)}
+  .review-item .answer-row.correct-row .answer-text{color:var(--beckons-forest);font-weight:500}
+
+  @media(max-width:580px){
+    .hero h1{font-size:38px}
+    .hero{padding:48px 24px 40px}
+    .section{padding:32px 20px 48px}
+    .progress-bar-wrap{padding:12px 20px}
+    .section-footer{flex-direction:column-reverse}
+    .section-footer .nav-arrow{width:100%}
+    .results-score{font-size:56px}
+    .results-score .denom{font-size:36px}
+    .review-item .answer-row{flex-direction:column}
+    .review-item .answer-row .answer-label{width:auto;margin-bottom:2px}
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-eyebrow">Beckons · Required Training</div>
+  <h1>Acceptable Use of <em>AI</em></h1>
+  <p class="hero-sub">Which tools are approved, how to handle data, and what to do if something goes wrong. About five minutes.</p>
+  <div class="hero-meta">5 modules · 10-question quiz</div>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-bar-inner">
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-meta">
+      <span class="step-label" id="stepLabel">Welcome</span>
+      <span class="step-count" id="stepCount">0 of 6</span>
+    </div>
+  </div>
+</div>
+
+<!-- WELCOME -->
+<section id="welcome" class="section active">
+  <div class="section-label">Before you begin</div>
+  <h2>About this module</h2>
+  <p class="section-intro">This training covers Beckons' AI policy. Everyone using AI tools on behalf of the Company needs to complete it before being granted a Claude seat. There are five short modules, then a ten-question quiz.</p>
+
+  <div class="welcome-grid">
+    <div class="welcome-card">
+      <div class="label">Duration</div>
+      <div class="value">~5 minutes</div>
+    </div>
+    <div class="welcome-card">
+      <div class="label">Format</div>
+      <div class="value">5 modules</div>
+    </div>
+    <div class="welcome-card">
+      <div class="label">Pass Mark</div>
+      <div class="value">7 of 10</div>
+    </div>
+  </div>
+
+  <div class="callout"><strong>Two principles underpin everything:</strong> protect Beckons and its guests, and apply human judgment to everything AI produces. The rest of this training is detail on how to do that in practice.</div>
+
+  <div class="section-footer">
+    <span></span>
+    <button class="nav-arrow primary" onclick="goTo(1)">Begin training →</button>
+  </div>
+</section>
+
+<!-- MODULE 1 -->
+<section id="module-1" class="section">
+  <div class="section-label">Module 1 · Scope</div>
+  <h2>What this policy covers, and who it applies to</h2>
+  <p class="section-intro">This policy sets the standard for how AI is used across Beckons. It is a baseline that protects the Company, our guests, and the people we work with.</p>
+
+  <h3 class="h3-section">Who it applies to</h3>
+  <ul class="tip-list">
+    <li><strong>Everyone at Beckons</strong>Employees full-time and part-time, contractors, consultants, interns, temporary staff, and anyone else acting on behalf of the Company.</li>
+    <li><strong>Any device used for Company business</strong>Including personal devices. The rules don't change because the laptop is yours.</li>
+  </ul>
+
+  <h3 class="h3-section">What it applies to</h3>
+  <ul class="tip-list">
+    <li><strong>Generative AI tools</strong>Text, image, audio, and video generation tools of any kind.</li>
+    <li><strong>Coding assistants</strong>Developer tools that write, complete, or review code.</li>
+    <li><strong>Analytics and data tools</strong>Any tool that uses AI to process or interpret data.</li>
+    <li><strong>AI features in existing software</strong>The AI features baked into tools you already use also count.</li>
+  </ul>
+
+  <div class="callout"><strong>Two principles:</strong> protect Beckons and its guests, and apply human judgment to everything AI produces. Every rule that follows comes back to one of these.</div>
+
+  <div class="section-footer">
+    <button class="nav-arrow" onclick="goTo(0)">← Welcome</button>
+    <button class="nav-arrow primary" onclick="goTo(2)">Module 2 →</button>
+  </div>
+</section>
+
+<!-- MODULE 2 -->
+<section id="module-2" class="section">
+  <div class="section-label">Module 2 · Approved tools</div>
+  <h2>Approved tools and how to get access</h2>
+  <p class="section-intro">You may only use AI tools on the Beckons Approved AI Tools list for Company business. Anything else is off-limits, regardless of how convenient or capable it appears.</p>
+
+  <h3 class="h3-section">Currently approved</h3>
+  <ul class="tip-list">
+    <li><strong>Anthropic Claude</strong>Via a Company-provisioned enterprise account.</li>
+    <li><strong>Microsoft Copilot</strong>Via a Company-provisioned enterprise account.</li>
+  </ul>
+
+  <div class="callout"><strong>Enterprise accounts only.</strong> Personal accounts, free tiers, and trial sign-ups do not qualify, even if the underlying tool is on the approved list. The account matters as much as the tool.</div>
+
+  <h3 class="h3-section">Requesting a new tool</h3>
+  <p style="margin-bottom:16px;color:var(--beckons-muted);font-size:14px;">If you believe another tool would be useful, submit a written request to the CFO and the Systems and Projects Manager <em>before</em> using it. Your request must include:</p>
+  <ul class="tip-list">
+    <li><strong>Tool name and vendor</strong>Who makes it, and what it's called.</li>
+    <li><strong>Intended use case</strong>What you'd actually use it for.</li>
+    <li><strong>Data types involved</strong>What kind of information you'd put into it.</li>
+    <li><strong>Confirmation of paid tier</strong>Free tiers are not approvable.</li>
+    <li><strong>Confirmation that Company data will not be used for model training</strong>This is a hard requirement.</li>
+    <li><strong>Estimated monthly cost</strong>So Finance can plan.</li>
+    <li class="highlight"><strong>If a Connector is involved</strong>A Connector is an integration that lets an AI tool access or act in another system, including via the Model Context Protocol. Where a Connector is part of the request, also include details of the connected system and the access the AI will be granted.</li>
+  </ul>
+
+  <div class="callout"><strong>Sign-off required:</strong> both the CFO and the Systems and Projects Manager must approve before any new tool is used. One signature is not enough.</div>
+
+  <div class="section-footer">
+    <button class="nav-arrow" onclick="goTo(1)">← Module 1</button>
+    <button class="nav-arrow primary" onclick="goTo(3)">Module 3 →</button>
+  </div>
+</section>
+
+<!-- MODULE 3 -->
+<section id="module-3" class="section">
+  <div class="section-label">Module 3 · Data classification</div>
+  <h2>What you can and cannot put into AI</h2>
+  <p class="section-intro">Most data breaches involving AI come from someone pasting too much into a prompt. The rule is simple, and the rule is non-negotiable.</p>
+
+  <h3 class="h3-section">What counts as Protected Information</h3>
+  <p style="margin-bottom:16px;color:var(--beckons-muted);font-size:14px;">Protected Information is any non-public, confidential, sensitive, or regulated information about Beckons or third parties. Examples include:</p>
+
+  <div class="do-dont">
+    <div class="dont-box">
+      <div class="label">Protected — handle with care</div>
+      <ul>
+        <li>Employment records</li>
+        <li>Guest details and personal data</li>
+        <li>Financial information</li>
+        <li>Health data</li>
+        <li>Business strategies, pricing, and contracts</li>
+        <li>Source code and trade secrets</li>
+      </ul>
+    </div>
+    <div class="do-box">
+      <div class="label">Generally fine</div>
+      <ul>
+        <li>Public information already on our website</li>
+        <li>Anonymised or fictional examples</li>
+        <li>Generic templates with no personal data</li>
+        <li>Brand and tone of voice guidelines</li>
+        <li>Industry research and news articles</li>
+        <li>Your own draft copy for review</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="h3-section">The rule</h3>
+  <ul class="tip-list">
+    <li><strong>Approval is data-specific</strong>Protected Information must not be entered into any AI tool unless that specific tool is approved for that data type and the right safeguards are in place. Approval for one purpose does not mean approval for all data.</li>
+    <li class="highlight"><strong>Before you paste, ask three questions</strong>Do I actually need to include this to get a useful answer? Can I anonymise it (remove names, identifiers, account numbers)? Can I summarise the situation without the underlying data?</li>
+    <li class="warn"><strong>Unapproved tools never receive Protected Information</strong>No exceptions, no workarounds, no quick favours.</li>
+  </ul>
+
+  <div class="section-footer">
+    <button class="nav-arrow" onclick="goTo(2)">← Module 2</button>
+    <button class="nav-arrow primary" onclick="goTo(4)">Module 4 →</button>
+  </div>
+</section>
+
+<!-- MODULE 4 -->
+<section id="module-4" class="section">
+  <div class="section-label">Module 4 · Responsibilities</div>
+  <h2>Your responsibilities when using AI</h2>
+  <p class="section-intro">AI is a tool. The responsibility for the work product, and for the consequences, stays with you.</p>
+
+  <ul class="tip-list">
+    <li><strong>Outputs are not facts</strong>AI outputs can be inaccurate, incomplete, biased, or simply wrong. You remain responsible for everything you produce, regardless of how it was produced.</li>
+    <li><strong>Review before anything goes external</strong>Before AI-assisted content reaches anyone outside Beckons (communications, customer-facing material, regulatory submissions, legal documents) it must be reviewed and signed off by the right person.</li>
+    <li><strong>Stand behind your work</strong>You must be able to explain and defend any decision or communication where AI played a role. If you cannot, do not send it.</li>
+    <li><strong>Disclosure</strong>Where the use of AI must be disclosed for legal or contractual reasons, ensure that disclosure happens. Do not assume someone else will catch it.</li>
+    <li class="warn"><strong>Where AI must not run unsupervised</strong>AI must not be used to make or automate decisions in legal, regulatory, employment, privacy, financial, or customer-facing contexts without appropriate human oversight.</li>
+    <li class="highlight"><strong>Watch for bias</strong>AI tools can reflect biases from their training data. Actively evaluate outputs whenever AI is used in contexts that affect people, and never use AI in ways that lead to unlawful discrimination.</li>
+  </ul>
+
+  <div class="example-box">
+    <div class="ex-label">In practice</div>
+    <div class="example-prompt">"Claude drafted a great offer letter, I'll just send it through."</div>
+    <div class="example-note">→ Not yet. Read it. Verify the figures, the dates, the name. AI can confidently get any of these wrong, and the signature on the bottom is yours.</div>
+  </div>
+
+  <div class="section-footer">
+    <button class="nav-arrow" onclick="goTo(3)">← Module 3</button>
+    <button class="nav-arrow primary" onclick="goTo(5)">Module 5 →</button>
+  </div>
+</section>
+
+<!-- MODULE 5 -->
+<section id="module-5" class="section">
+  <div class="section-label">Module 5 · Reporting</div>
+  <h2>What to do if something goes wrong</h2>
+  <p class="section-intro">Mistakes happen. The thing that turns a small mistake into a big one is delay. Speak up early.</p>
+
+  <ul class="tip-list">
+    <li><strong>Report it immediately</strong>If you suspect or become aware of a breach of this policy, report it to the Systems and Projects Manager. Do not wait to see whether it becomes a real problem.</li>
+    <li class="highlight"><strong>No retaliation</strong>Beckons will not tolerate retaliation against anyone who raises a concern in good faith. Speaking up is encouraged and protected.</li>
+    <li class="warn"><strong>Consequences</strong>Breaches may result in disciplinary action up to and including termination, and may carry legal consequences. The response will reflect the nature, severity, and circumstances of the breach.</li>
+    <li><strong>Monitoring</strong>Beckons may monitor AI tool usage on Company systems and networks to verify compliance with this policy.</li>
+  </ul>
+
+  <div class="callout"><strong>Policy owner:</strong> Dominic Gillespie. Questions on interpretation or application go to dominic.gillespie@beckons.com.</div>
+
+  <div class="section-footer">
+    <button class="nav-arrow" onclick="goTo(4)">← Module 4</button>
+    <button class="nav-arrow primary" onclick="goTo(6)">Take the quiz →</button>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section id="quiz" class="section">
+  <div class="section-label">Final assessment</div>
+  <h2>Quiz</h2>
+  <p class="section-intro">Ten questions drawn from across the five modules. A pass requires seven correct. The Submit button activates once you've answered every question.</p>
+
+  <form id="quizForm"></form>
+
+  <div class="section-footer">
+    <button class="nav-arrow" onclick="goTo(5)">← Module 5</button>
+    <button class="nav-arrow primary" id="submitBtn" disabled onclick="submitQuiz(event)">Submit answers →</button>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section id="results" class="section">
+  <div class="section-label">Assessment complete</div>
+  <h2>Your results</h2>
+
+  <div class="results-hero">
+    <div class="results-eyebrow">Score</div>
+    <div class="results-score"><span id="scoreNum">0</span><span class="denom"> / 10</span></div>
+    <div class="results-status" id="resultsStatus">—</div>
+    <div class="results-message" id="resultsMessage"></div>
+    <div id="recordWrap"></div>
+    <div class="record-confirmation" id="recordConfirmation">✓ Form opened in a new tab. Please complete it to register your completion.</div>
+  </div>
+
+  <div id="reviewSection"></div>
+
+  <div class="section-footer" id="resultsFooter">
+    <span></span>
+    <button class="nav-arrow primary" id="retakeBtn" style="display:none;" onclick="retakeQuiz()">Review &amp; retake →</button>
+  </div>
+</section>
+
+<script>
+  // ---------- Microsoft Forms config ----------
+  const FORM_BASE_URL = "https://forms.microsoft.com/Pages/ResponsePage.aspx?id=nUZIAaX7eUSGNGThpwTOyCqbqdSX835Ck2mEgziqURVUN1VHS1FGMDUyTzQyS1FKMDJaMDVLSDdZSi4u";
+  const FIELD_SCORE = "re7600cb26d9e4bb58105f5b8a4c509a2";
+  const FIELD_DATE  = "r04f8caab859e4e1daae33155ec961224";
+
+  function buildFormUrl(score){
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const dd = String(today.getDate()).padStart(2,'0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    const params = new URLSearchParams();
+    params.set(FIELD_SCORE, score);
+    params.set(FIELD_DATE, dateStr);
+    return `${FORM_BASE_URL}&${params.toString()}`;
+  }
+
+  // ---------- State ----------
+  let currentStep = 0;
+  let quizSubmitted = false;
+  let lastScore = 0;
+
+  const QUIZ = [
+    {q:"This policy only applies to full-time Beckons employees using Company-issued devices.",type:"tf",options:["True","False"],correct:1},
+    {q:"Which of the following tools is currently approved for use at Beckons?",type:"mc",options:["ChatGPT (personal account)","Anthropic Claude via a Company enterprise account","Google Gemini via a personal Gmail account","Any AI tool as long as it's free"],correct:1},
+    {q:"An employee wants to use an approved AI tool but only has access to a personal account. Is this permitted under Beckons policy?",type:"tf",options:["True","False"],correct:1},
+    {q:"Which of the following is an example of Protected Information?",type:"mc",options:["A publicly available news article","Your colleague's employment record","The name of an approved AI tool","A generic email template with no personal details"],correct:1},
+    {q:"An employee is about to paste client details into an AI prompt. Per the policy, what should they do first?",type:"mc",options:["Check that the AI tool produces professional-looking output","Confirm that a colleague has used the tool for a similar task","Consider whether the client details are necessary, or whether they can be anonymised or summarised","Make sure the task will be completed faster than doing it manually"],correct:2},
+    {q:"If an AI tool produces content that looks good and reads well, it can be shared externally without further review.",type:"tf",options:["True","False"],correct:1},
+    {q:"Who must sign off before a new AI tool can be used at Beckons?",type:"mc",options:["Your direct manager and the IT department","The CEO and General Counsel","CFO and System Administrator","Any two members of the senior leadership team"],correct:2},
+    {q:"Which of the following is NOT permitted under this policy?",type:"mc",options:["Using Claude to draft an internal email","Using an unapproved AI tool for a quick task because it's faster","Reviewing AI-generated content before sending it externally","Anonymising guest data before including it in a prompt"],correct:1},
+    {q:"If you notice that an AI output may be biased or discriminatory, you are expected to flag and address this before acting on it.",type:"tf",options:["True","False"],correct:0},
+    {q:"If you suspect a breach of this policy, what should you do?",type:"mc",options:["Handle it quietly and avoid escalating","Wait to see if it causes any real harm before reporting","Report it immediately to the Systems and Projects Manager","Only report it if you were directly involved"],correct:2}
+  ];
+
+  function shuffleQuizOptions(){
+    QUIZ.forEach(q=>{
+      if(q.type==='tf'){
+        q.shuffledOptions=q.options.map((opt,i)=>({text:opt,originalIndex:i}));
+      } else {
+        const indexed=q.options.map((opt,i)=>({text:opt,originalIndex:i}));
+        for(let i=indexed.length-1;i>0;i--){
+          const j=Math.floor(Math.random()*(i+1));
+          [indexed[i],indexed[j]]=[indexed[j],indexed[i]];
+        }
+        q.shuffledOptions=indexed;
+      }
+    });
+  }
+
+  function renderQuiz(){
+    shuffleQuizOptions();
+    const form=document.getElementById('quizForm');
+    form.innerHTML='';
+    QUIZ.forEach((q,qIndex)=>{
+      const block=document.createElement('div');
+      block.className='quiz-question';
+      block.dataset.qindex=qIndex;
+      const num=String(qIndex+1).padStart(2,'0');
+      block.innerHTML=`<div class="q-num">Question ${num}</div><div class="q-text">${q.q}</div><div class="options"></div>`;
+      const optionsContainer=block.querySelector('.options');
+      q.shuffledOptions.forEach((opt,displayIdx)=>{
+        const id=`q${qIndex}_o${displayIdx}`;
+        const optionEl=document.createElement('label');
+        optionEl.className='option';
+        optionEl.htmlFor=id;
+        optionEl.dataset.qindex=qIndex;
+        optionEl.dataset.original=opt.originalIndex;
+        optionEl.innerHTML=`<input type="radio" name="q${qIndex}" id="${id}" value="${opt.originalIndex}"><div class="marker"></div><div class="label-text">${opt.text}</div>`;
+        optionEl.addEventListener('click',()=>selectOption(qIndex,opt.originalIndex,optionEl));
+        optionsContainer.appendChild(optionEl);
+      });
+      form.appendChild(block);
+    });
+  }
+
+  function selectOption(qIndex,originalIndex,optionEl){
+    if(quizSubmitted) return;
+    const siblings=document.querySelectorAll(`.option[data-qindex="${qIndex}"]`);
+    siblings.forEach(s=>s.classList.remove('selected'));
+    optionEl.classList.add('selected');
+    optionEl.querySelector('input').checked=true;
+    updateSubmitButton();
+  }
+
+  function updateSubmitButton(){
+    const allAnswered=QUIZ.every((_,i)=>document.querySelector(`input[name="q${i}"]:checked`)!==null);
+    document.getElementById('submitBtn').disabled=!allAnswered;
+  }
+
+  function submitQuiz(e){
+    if(e) e.preventDefault();
+    if(quizSubmitted) return;
+    quizSubmitted=true;
+    let score=0;
+    const wrong=[];
+    QUIZ.forEach((q,i)=>{
+      const selectedInput=document.querySelector(`input[name="q${i}"]:checked`);
+      const selectedVal=selectedInput?parseInt(selectedInput.value,10):-1;
+      const opts=document.querySelectorAll(`.option[data-qindex="${i}"]`);
+      opts.forEach(opt=>{
+        opt.classList.add('disabled');
+        const orig=parseInt(opt.dataset.original,10);
+        if(orig===q.correct) opt.classList.add('correct');
+        else if(orig===selectedVal && orig!==q.correct) opt.classList.add('incorrect');
+      });
+      if(selectedVal===q.correct) score++;
+      else wrong.push({index:i,question:q.q,yourAnswer:selectedVal>=0?q.options[selectedVal]:'(no answer)',correctAnswer:q.options[q.correct]});
+    });
+    lastScore=score;
+    showResults(score,wrong);
+  }
+
+  function showResults(score,wrong){
+    document.getElementById('scoreNum').textContent=score;
+    const passed=score>=7;
+    const statusEl=document.getElementById('resultsStatus');
+    const msgEl=document.getElementById('resultsMessage');
+    const recordWrap=document.getElementById('recordWrap');
+    const recordConfirm=document.getElementById('recordConfirmation');
+    recordConfirm.classList.remove('shown');
+
+    statusEl.textContent=passed?"Passed":"Not passed";
+    statusEl.className='results-status '+(passed?'pass':'fail');
+
+    if(passed){
+      msgEl.textContent="Click below to record your completion. The form will open in a new tab — please add your name and submit.";
+      recordWrap.innerHTML=`<button class="record-btn" onclick="recordCompletion()">Record my completion →</button>`;
+    } else {
+      msgEl.textContent="You did not meet the required pass mark. Please review the modules and retake the quiz.";
+      recordWrap.innerHTML='';
+    }
+
+    const reviewSection=document.getElementById('reviewSection');
+    if(wrong.length===0){
+      reviewSection.innerHTML='';
+    } else {
+      let html='<h3 class="h3-section">Worth another look</h3>';
+      wrong.forEach(w=>{
+        const num=String(w.index+1).padStart(2,'0');
+        html+=`<div class="review-item"><div class="q"><span class="qnum">Q${num}</span>${w.question}</div><div class="answer-row wrong-row"><span class="answer-label">Your answer</span><span class="answer-text">${w.yourAnswer}</span></div><div class="answer-row correct-row"><span class="answer-label">Correct</span><span class="answer-text">${w.correctAnswer}</span></div></div>`;
+      });
+      reviewSection.innerHTML=html;
+    }
+    document.getElementById('retakeBtn').style.display=passed?'none':'inline-block';
+    goTo(7);
+  }
+
+  function recordCompletion(){
+    const url = buildFormUrl(lastScore);
+    window.open(url, '_blank', 'noopener');
+    document.getElementById('recordConfirmation').classList.add('shown');
+  }
+
+  function retakeQuiz(){
+    quizSubmitted=false;
+    renderQuiz();
+    goTo(1);
+  }
+
+  const SCREEN_KEYS=['welcome','module-1','module-2','module-3','module-4','module-5','quiz','results'];
+
+  function goTo(stepIndex){
+    currentStep=stepIndex;
+    SCREEN_KEYS.forEach(key=>{
+      document.getElementById(key).classList.remove('active');
+    });
+    document.getElementById(SCREEN_KEYS[stepIndex]).classList.add('active');
+    updateProgress(stepIndex);
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function updateProgress(stepIndex){
+    let pct;
+    if(stepIndex===7) pct=100;
+    else pct=Math.min((stepIndex/6)*100,100);
+    document.getElementById('progressFill').style.width=pct+'%';
+    const labelMap=["Welcome","Module 1 of 5","Module 2 of 5","Module 3 of 5","Module 4 of 5","Module 5 of 5","Final assessment","Complete"];
+    document.getElementById('stepLabel').textContent=labelMap[stepIndex];
+    const countMap=["0 of 6","1 of 6","2 of 6","3 of 6","4 of 6","5 of 6","6 of 6","Complete"];
+    document.getElementById('stepCount').textContent=countMap[stepIndex];
+  }
+
+  renderQuiz();
+  updateProgress(0);
+</script>
+</body>
+</html>
